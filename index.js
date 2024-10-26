@@ -36,6 +36,8 @@ client.on('messageCreate', (message) => {
 
         // Respond with "dzięki"
         message.reply('dzięki').catch(console.error);
+    } else {
+        console.log("Code not detected in message");
     }
 });
 
