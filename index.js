@@ -24,11 +24,16 @@ client.once('ready', () => {
 
 // Listen for messages
 client.on('messageCreate', (message) => {
+    // Log every message the bot processes
+    console.log(`Message received: ${message.content}`);
+
     // Ignore messages from the bot itself
     if (message.author.bot) return;
 
     // Check if the message contains a code matching our pattern
     if (codePattern.test(message.content)) {
+        console.log("Code detected in message.");
+
         // Respond with "dzięki"
         message.reply('dzięki').catch(console.error);
     }
