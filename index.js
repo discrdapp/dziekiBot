@@ -21,16 +21,12 @@ client.once('ready', () => {
 
 // Listen for messages
 client.on('messageCreate', (message) => {
-    console.log(`Message received: ${message.content}`);
     if (message.author.bot || message.content.startsWith("dzięki")) return;
 
     const codePatternInstance = new RegExp(/\b[0-9a-fA-F]{4,8}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-?[0-9a-fA-F]{0,12}\b/);
 
     if (codePatternInstance.test(message.content)) {
-        console.log("Code detected in message.");
         message.reply('dzięki').catch(console.error);
-    } else {
-        console.log("Code not detected in message.");
     }
 });
 
