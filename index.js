@@ -14,9 +14,6 @@ const client = new Client({
     ]
 });
 
-// Flexible pattern for UUID-like codes
-const codePattern = /\b[0-9a-fA-F]{4,8}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-?[0-9a-fA-F]{0,12}\b/g;
-
 // When the bot is ready, log a message
 client.once('ready', () => {
     console.log('Bot is online!');
@@ -24,20 +21,16 @@ client.once('ready', () => {
 
 // Listen for messages
 client.on('messageCreate', (message) => {
-    // Log every message the bot processes
     console.log(`Message received: ${message.content}`);
+    if (message.author.bot || message.content.startsWith("dzięki")) return;
 
-    // Ignore messages from the bot itself
-    if (message.author.bot) return;
+    const codePatternInstance = new RegExp(/\b[0-9a-fA-F]{4,8}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-?[0-9a-fA-F]{0,12}\b/);
 
-    // Check if the message contains a code matching our pattern
-    if (codePattern.test(message.content)) {
+    if (codePatternInstance.test(message.content)) {
         console.log("Code detected in message.");
-
-        // Respond with "dzięki"
         message.reply('dzięki').catch(console.error);
     } else {
-        console.log("Code not detected in message");
+        console.log("Code not detected in message.");
     }
 });
 
