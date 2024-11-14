@@ -13,8 +13,9 @@ const client = new Client({
     ]
 });
 
-// Store the last detected code
+// Store the last detected code and user tracking
 let lastDetectedCode = null;
+let userResponseCount = {};
 const codePattern = /\b[0-9a-fA-F]{4,8}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-?[0-9a-fA-F]{0,12}\b/;
 const monitoredChannelId = '1184882890635489451';
 
@@ -43,26 +44,36 @@ client.once('ready', async () => {
 });
 
 client.on('messageCreate', (message) => {
-    // Check if the message is in the monitored channel
-    if (message.channel.id !== monitoredChannelId) return;
+    console.log(`Message received: ${message.content}`);
 
     // Ignore messages from the bot itself
     if (message.author.bot) return;
 
-    // Check if the message contains a code and update the last detected code
-    if (codePattern.test(message.content)) {
+    // Check if the message is in the monitored channel and contains a code
+    if (message.channel.id === monitoredChannelId && codePattern.test(message.content)) {
         lastDetectedCode = message.content.match(codePattern)[0];
         console.log(`Code detected and saved: ${lastDetectedCode}`);
-        // Reply with "dzięki" when a code is detected
         message.reply('dzięki').catch(console.error);
+
+        // Reset the response count for all users and start tracking the new sender
+        userResponseCount = { [message.author.id]: 1 };
+        return; // Only reply with "dzięki" in the monitored channel
     }
 
-    // Check if the message is "dzięki" (case-insensitive)
-    if (/^dzieki$/i.test(message.content.trim())) {
-        if (lastDetectedCode) {
-            message.reply(`${lastDetectedCode}`).catch(console.error);
+    // Check if the message is "dzięki" or similar (case-insensitive) in any channel
+    if (/^dzieki$/i.test(message.content.trim()) || /^dzięki$/i.test(message.content.trim())) {
+        // Check if the user has been responded to 20 times in a row
+        if (userResponseCount[message.author.id] >= 20) {
+            message.reply('* but nobody came.').catch(console.error);
         } else {
-            message.reply('Nwm jaki kod ci mam wysłać, bo nie było żadnego w ostanich 100 wiadomościach.').catch(console.error);
+            if (lastDetectedCode) {
+                message.reply(`${lastDetectedCode}`).catch(console.error);
+            } else {
+                message.reply('No code has been detected yet.').catch(console.error);
+            }
+
+            // Update the response count for the user
+            userResponseCount[message.author.id] = (userResponseCount[message.author.id] || 0) + 1;
         }
     }
 });
