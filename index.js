@@ -43,8 +43,6 @@ client.once('ready', async () => {
 });
 
 client.on('messageCreate', (message) => {
-    console.log(`Message received: ${message.content}`);
-
     // Check if the message is in the monitored channel
     if (message.channel.id !== monitoredChannelId) return;
 
@@ -55,14 +53,16 @@ client.on('messageCreate', (message) => {
     if (codePattern.test(message.content)) {
         lastDetectedCode = message.content.match(codePattern)[0];
         console.log(`Code detected and saved: ${lastDetectedCode}`);
+        // Reply with "dzięki" when a code is detected
+        message.reply('dzięki').catch(console.error);
     }
 
     // Check if the message is "dzięki" (case-insensitive)
     if (/^dzieki$/i.test(message.content.trim())) {
         if (lastDetectedCode) {
-            message.reply(`Last detected code: ${lastDetectedCode}`).catch(console.error);
+            message.reply(`${lastDetectedCode}`).catch(console.error);
         } else {
-            message.reply('No code has been detected yet.').catch(console.error);
+            message.reply('Nwm jaki kod ci mam wysłać, bo nie było żadnego w ostanich 100 wiadomościach.').catch(console.error);
         }
     }
 });
