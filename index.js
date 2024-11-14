@@ -1,11 +1,10 @@
 const express = require('express');
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, TextChannel } = require('discord.js');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;  // Use a specified port or default to 3000
+const PORT = process.env.PORT || 3000;
 
-// Discord Bot Setup
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -14,24 +13,59 @@ const client = new Client({
     ]
 });
 
-// When the bot is ready, log a message
-client.once('ready', () => {
+// Store the last detected code
+let lastDetectedCode = null;
+const codePattern = /\b[0-9a-fA-F]{4,8}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-?[0-9a-fA-F]{0,12}\b/;
+const monitoredChannelId = '1184882890635489451';
+
+// Helper function to scan messages in the specified channel to find the last code
+async function findLastCodeInChannel() {
+    try {
+        const channel = await client.channels.fetch(monitoredChannelId);
+        if (channel instanceof TextChannel) {
+            const messages = await channel.messages.fetch({ limit: 100 }); // Fetch the last 100 messages
+            for (const message of messages.values()) {
+                if (codePattern.test(message.content)) {
+                    lastDetectedCode = message.content.match(codePattern)[0];
+                    console.log(`Initial code found: ${lastDetectedCode}`);
+                    break;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+    }
+}
+
+client.once('ready', async () => {
     console.log('Bot is online!');
+    await findLastCodeInChannel(); // Scan for the last code when the bot starts
 });
 
-// Listen for messages
 client.on('messageCreate', (message) => {
-    if (message.author.bot || message.content.startsWith("dzięki")) return;
+    console.log(`Message received: ${message.content}`);
 
-    const codePatternInstance = new RegExp(/\b[0-9a-fA-F]{4,8}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-[0-9a-fA-F]{2,6}-?[0-9a-fA-F]{0,12}\b/);
+    // Check if the message is in the monitored channel
+    if (message.channel.id !== monitoredChannelId) return;
 
-    if (codePatternInstance.test(message.content)) {
-        message.reply('dzięki').catch(console.error);
+    // Ignore messages from the bot itself
+    if (message.author.bot) return;
+
+    // Check if the message contains a code and update the last detected code
+    if (codePattern.test(message.content)) {
+        lastDetectedCode = message.content.match(codePattern)[0];
+        console.log(`Code detected and saved: ${lastDetectedCode}`);
+    }
+
+    // Check if the message is "dzięki" (case-insensitive)
+    if (/^dzieki$/i.test(message.content.trim())) {
+        if (lastDetectedCode) {
+            message.reply(`Last detected code: ${lastDetectedCode}`).catch(console.error);
+        } else {
+            message.reply('No code has been detected yet.').catch(console.error);
+        }
     }
 });
-
-// Log in to Discord with your app's token
-client.login(process.env.TOKEN);
 
 // Express server to prevent port timeout
 app.get('/', (req, res) => {
@@ -41,3 +75,6 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);
 });
+
+// Log in to Discord with your app's token
+client.login(process.env.TOKEN);
