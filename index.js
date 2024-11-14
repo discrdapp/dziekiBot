@@ -44,8 +44,6 @@ client.once('ready', async () => {
 });
 
 client.on('messageCreate', (message) => {
-    console.log(`Message received: ${message.content}`);
-
     // Ignore messages from the bot itself
     if (message.author.bot) return;
 
