@@ -50,14 +50,20 @@ client.on('messageCreate', (message) => {
     if (message.author.bot) return;
 
     // Check if the message is in the monitored channel and contains a code
-    if (message.channel.id === monitoredChannelId && codePattern.test(message.content)) {
-        lastDetectedCode = message.content.match(codePattern)[0];
-        console.log(`Code detected and saved: ${lastDetectedCode}`);
-        message.reply('dzięki').catch(console.error);
+    if (codePattern.test(message.content)) {
+        if (message.channel.id === monitoredChannelId) {
+            lastDetectedCode = message.content.match(codePattern)[0];
+            console.log(`Code detected and saved: ${lastDetectedCode}`);   
+        }
 
-        // Reset the response count for all users and start tracking the new sender
-        userResponseCount = { [message.author.id]: 1 };
-        return; // Only reply with "dzięki" in the monitored channel
+        // Check if the user has been responded to 20 times in a row
+        if (userResponseCount[message.author.id] >= 20) {
+            message.reply('* but nobody came.').catch(console.error);
+        } else {
+            message.reply('dzięki').catch(console.error);
+            userResponseCount[message.author.id] = (userResponseCount[message.author.id] || 0) + 1;
+        }
+        return;
     }
 
     // Check if the message is "dzięki" or similar (case-insensitive) in any channel
@@ -69,7 +75,7 @@ client.on('messageCreate', (message) => {
             if (lastDetectedCode) {
                 message.reply(`${lastDetectedCode}`).catch(console.error);
             } else {
-                message.reply('No code has been detected yet.').catch(console.error);
+                message.reply('Nwm jaki kod wysłać, bo w ostatnich 100 wiadomościach go nie było. ').catch(console.error);
             }
 
             // Update the response count for the user
